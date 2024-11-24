@@ -1,3 +1,3 @@
 [submodule "MoCapTools"]
 	path = MoCapTools
-	url = git@github.com:zyigo/MoCapTools.git
+	url = https://github.com/zyigo/MoCapTools.git
