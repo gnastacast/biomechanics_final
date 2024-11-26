@@ -72,14 +72,15 @@ apexYpos = islocalmax(vxy(:,2));
 apexPoints = (vxy(1:end-1,2) > 0) & (vxy(2:end,2) < 0); % Find maxima
 apexIndices = find(apexPoints);
 
-dy = []; h = [];
+dx = []; dy = []; h = [];
 takeoffIndices = [];
 
 for i = 1:length(xyFP_vec(:,2))-1
     if xyFP_vec(i,2) <= 0 && xyFP_vec(i+1,2) > 0
         fprintf('Current index i: %d\n', i)
         takeoffIndices(end+1) = i;
-        dy(end+1) = vxy(i+1); % velocity at takeoff
+        dx(end+1) = vxy(i+1,1);
+        dy(end+1) = vxy(i+1,2); % velocity at takeoff
     end
 end
 
@@ -90,8 +91,8 @@ for i = 1:length(apexIndices)
     apexPoint = apexIndices(i);
     takeoffPoint = takeoffIndices(i);
     t = out.xy.Time(apexPoint) - out.xy.Time(takeoffPoint); % time to reach apex from takeoff
-    apexPos(i,1) = xy_vec(takeoffPoint,1) + dy(i) * t; % X pos
-    apexPos(i,2) = xy_vec(takeoffPoint,2) + dy(i) * t + 0.5 * g * t ^ 2; % Y pos
+    apexPos(i,1) = xy_vec(takeoffPoint,1) + dx(i) * t; % X pos
+    apexPos(i,2) = xy_vec(takeoffPoint,2) + dy(i) * t - 0.5 * g * t ^ 2; % Y pos
 end
 
 % 1/2mv^2 = mgh -> h = v^2/2g
