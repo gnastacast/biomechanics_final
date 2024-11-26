@@ -84,12 +84,14 @@ for i = 1:length(xyFP_vec(:,2))-1
 end
 
 apexPos = zeros(length(apexIndices), 2);
+apexTimes = [];
 % apex(1) = x + dx * t; % x component
 % apex(2) = y + dy * t + 0.5 * g * t ^ 2; % y component
 for i = 1:length(apexIndices)
     apexPoint = apexIndices(i);
     takeoffPoint = takeoffIndices(i);
     t = out.xy.Time(apexPoint) - out.xy.Time(takeoffPoint); % time to reach apex from takeoff
+    apexTimes(end+1) = out.xy.Time(takeoffPoint) + t; % Store times for plot / visualization
     apexPos(i,1) = xy_vec(takeoffPoint,1) + dx(i) * t; % X pos
     apexPos(i,2) = xy_vec(takeoffPoint,2) + dy(i) * t - 0.5 * g * t ^ 2; % Y pos
 end
@@ -105,3 +107,23 @@ plot(out.xy.Time(2:end), vxy(:,2));
 title('Smoothed Velocity vs Time');
 xlabel('Time (s)');
 ylabel('v_y');
+
+figure;
+grid on;
+subplot(2, 1, 1);
+hold on;
+plot(out.xy.Time, smoothedXYvec(:,1));
+plot(apexTimes, apexPos(:,1), 'o', 'MarkerSize', 5, 'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'b');
+title('X Position vs Time');
+xlabel('Time (s)');
+ylabel('X Position (m)');
+legend('X Position', 'Apex X Points');
+
+subplot(2, 1, 2);
+hold on;
+plot(out.xy.Time, smoothedXYvec(:,2));
+plot(apexTimes, apexPos(:,2), 'o', 'MarkerSize', 5, 'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'b');
+title('Y Position vs Time');
+xlabel('Time (s)');
+ylabel('Y Position (m)');
+legend('Y Position', 'Apex Y Points')
