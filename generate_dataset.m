@@ -68,7 +68,6 @@ axis equal
 %%
 smoothedXYvec = smoothdata(xy_vec,'movmean');
 vxy = smoothdata(diff(smoothedXYvec), 'movmean');
-apexYpos = islocalmax(vxy(:,2));
 apexPoints = (vxy(1:end-1,2) > 0) & (vxy(2:end,2) < 0); % Find maxima
 apexIndices = find(apexPoints);
 
@@ -102,7 +101,7 @@ end
 
 figure;
 grid on;
-plot(out.xy.Time(2:end), vxy(:,2))
-title('Smoothed Velocity vs Time')
+plot(out.xy.Time(2:end), vxy(:,2));
+title('Smoothed Velocity vs Time');
+xlabel('Time (s)');
 ylabel('v_y');
-xlabel('Time (s)')
