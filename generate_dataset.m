@@ -108,6 +108,7 @@ title('Smoothed Velocity vs Time');
 xlabel('Time (s)');
 ylabel('v_y');
 
+% Compare apex positions to XY vector
 figure;
 grid on;
 subplot(2, 1, 1);
@@ -126,4 +127,4 @@ plot(apexTimes, apexPos(:,2), 'o', 'MarkerSize', 5, 'MarkerEdgeColor', 'b', 'Mar
 title('Y Position vs Time');
 xlabel('Time (s)');
 ylabel('Y Position (m)');
-legend('Y Position', 'Apex Y Points')
+legend('Y Position', 'Apex Y Points');
