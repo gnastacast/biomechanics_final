@@ -22,6 +22,17 @@ load('polys.mat')
 out = sim('model5_2f.slx');
 
 %%
+figure();
+dt = gradient(out.xy.Time);
+dy_dt = gradient(out.xy.Data(:,2)) ./ dt;
+ddy_ddt = diff(dy_dt) ./ dt(2:end);
+ddy_ddt = [0; ddy_ddt];
+
+plot(out.xy.Time, dy_dt)
+
+% ylim([-40,40])
+
+%%
 figure;
 xyFP_vec = out.xyFP.Data;
 % inFlight_vec = out.yout{2}.Values.data;
@@ -53,3 +64,35 @@ axis equal
 % ylabel('North [m]');
 % legend('Actual','Measured','Kalman filter estimate','Location','Best');
 % axis tight;
+
+%%
+smoothedXYvec = smoothdata(xy_vec,'movmean');
+vxy = smoothdata(diff(smoothedXYvec), 'movmean');
+apexYpos = islocalmax(vxy(:,2));
+apexPoints = (vxy(1:end-1,2) > 0) & (vxy(2:end,2) < 0); % Find maxima
+apexIndices = find(apexPoints);
+
+apex = zeros(length(apexIndices), 2);
+dy = []; h = [];
+
+for i = 1:length(xyFP_vec(:,2))-1
+    if xyFP_vec(i,2) <= 0 && xyFP_vec(i+1,2) > 0
+        fprintf('Current index i: %d\n', i)
+        dy(end+1) = vxy(i+1); % velocity at takeoff
+    end
+end
+% 1/2mv^2 = mgh -> h = v^2/2g
+
+for i = 1:length(dy)
+    h(end+1) = dy(i)^2 / 2 * g;
+end
+
+% apex(1) = x + dx * t; % x component
+% apex(2) = y + dy * t + 0.5 * g * t ^ 2; % y component
+
+figure;
+grid on;
+plot(out.xy.Time(2:end), vxy(:,2))
+title('Smoothed Velocity vs Time')
+ylabel('v_y');
+xlabel('Time (s)')
