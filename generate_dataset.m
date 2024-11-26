@@ -71,13 +71,12 @@ vxy = smoothdata(diff(smoothedXYvec), 'movmean');
 apexPoints = (vxy(1:end-1,2) > 0) & (vxy(2:end,2) < 0); % Find maxima
 apexIndices = find(apexPoints);
 
-dx = []; dy = []; h = [];
+dx = []; dy = [];
 takeoffIndices = [];
-
 for i = 1:length(xyFP_vec(:,2))-1
     if xyFP_vec(i,2) <= 0 && xyFP_vec(i+1,2) > 0
         fprintf('Current index i: %d\n', i)
-        takeoffIndices(end+1) = i;
+        takeoffIndices(end+1) = i + 1;
         dx(end+1) = vxy(i+1,1);
         dy(end+1) = vxy(i+1,2); % velocity at takeoff
     end
@@ -97,9 +96,10 @@ for i = 1:length(apexIndices)
 end
 
 % 1/2mv^2 = mgh -> h = v^2/2g
-for i = 1:length(dy)
-    h(end+1) = dy(i)^2 / 2 * g;
-end
+% h = [];
+% for i = 1:length(dy)
+%     h(end+1) = dy(i)^2 / 2 * g;
+% end
 
 figure;
 grid on;
