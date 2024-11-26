@@ -102,16 +102,16 @@ end
 % end
 
 figure;
-grid on;
 plot(out.xy.Time(2:end), vxy(:,2));
+grid on;
 title('Smoothed Velocity vs Time');
 xlabel('Time (s)');
 ylabel('v_y');
 
 % Compare apex positions to XY vector
 figure;
-grid on;
 subplot(2, 1, 1);
+grid on; grid minor;
 hold on;
 plot(out.xy.Time, smoothedXYvec(:,1));
 plot(apexTimes, apexPos(:,1), 'o', 'MarkerSize', 5, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r');
@@ -122,6 +122,7 @@ legend('X Position', 'Apex X Points');
 
 subplot(2, 1, 2);
 hold on;
+grid on; grid minor;
 plot(out.xy.Time, smoothedXYvec(:,2));
 plot(apexTimes, apexPos(:,2), 'o', 'MarkerSize', 5, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r');
 title('Y Position vs Time');
