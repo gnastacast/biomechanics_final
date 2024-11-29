@@ -70,14 +70,13 @@ smoothedXYvec = smoothdata(xy_vec,'movmean');
 vxy(:,1) = gradient(smoothedXYvec(:,1), 0.001);
 vxy(:,2) = gradient(smoothedXYvec(:,2), 0.0005);
 vxy(:,2) = smoothdata(vxy(:,2), 'movmean');
-apexPoints = (vxy(1:end-1,2) > 0) & (vxy(2:end,2) < 0); % Find maxima
-apexIndices = find(apexPoints);
+apexFound = (vxy(1:end-1,2) > 0) & (vxy(2:end,2) < 0); % Find maxima
+apexIndices = find(apexFound);
 
 dx = []; dy = [];
 takeoffIndices = [];
 for i = 1:length(xyFP_vec(:,2))-1
     if xyFP_vec(i,2) <= 0 && xyFP_vec(i+1,2) > 0
-        fprintf('Current index i: %d\n', i)
         takeoffIndices(end+1) = i + 1;
         dx(end+1) = vxy(i+1,1);
         dy(end+1) = vxy(i+1,2); % velocity at takeoff
@@ -85,6 +84,7 @@ for i = 1:length(xyFP_vec(:,2))-1
 end
 
 apexPos = zeros(length(apexIndices), 2);
+percentError = zeros(length(apexIndices),2);
 apexTimes = [];
 % apex(1) = x + dx * t; % x component
 % apex(2) = y + dy * t + 0.5 * g * t ^ 2; % y component
@@ -95,6 +95,8 @@ for i = 1:length(apexIndices)
     apexTimes(end+1) = out.xy.Time(takeoffPoint) + t; % Store times for plot / visualization
     apexPos(i,1) = xy_vec(takeoffPoint,1) + dx(i) * t; % X pos
     apexPos(i,2) = xy_vec(takeoffPoint,2) + dy(i) * t - 0.5 * g * t ^ 2; % Y pos
+    percentError(i,1) = abs((apexPos(i,1) - xy_vec(apexPoint,1)) / xy_vec(apexPoint,1) * 100);
+    percentError(i,2) = abs((apexPos(i,2) - xy_vec(apexPoint,2)) / xy_vec(apexPoint,2) * 100);
 end
 
 figure;
@@ -125,3 +127,9 @@ title('Y Position vs Time');
 xlabel('Time (s)');
 ylabel('Y Position (m)');
 legend('Y Position', 'Apex Y Points');
+
+figure;
+plot(apexTimes, percentError, 'o');
+grid minor;
+title('Apex Percent Errors')
+legend('X Percent Error', 'Y Percent Error');
