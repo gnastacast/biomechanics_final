@@ -67,7 +67,9 @@ axis equal
 
 %%
 smoothedXYvec = smoothdata(xy_vec,'movmean');
-vxy = smoothdata(diff(smoothedXYvec), 'movmean');
+vxy(:,1) = gradient(smoothedXYvec(:,1), 0.001);
+vxy(:,2) = gradient(smoothedXYvec(:,2), 0.0005);
+vxy(:,2) = smoothdata(vxy(:,2), 'movmean');
 apexPoints = (vxy(1:end-1,2) > 0) & (vxy(2:end,2) < 0); % Find maxima
 apexIndices = find(apexPoints);
 
@@ -95,36 +97,30 @@ for i = 1:length(apexIndices)
     apexPos(i,2) = xy_vec(takeoffPoint,2) + dy(i) * t - 0.5 * g * t ^ 2; % Y pos
 end
 
-% 1/2mv^2 = mgh -> h = v^2/2g
-% h = [];
-% for i = 1:length(dy)
-%     h(end+1) = dy(i)^2 / 2 * g;
-% end
-
 figure;
-plot(out.xy.Time(2:end), vxy(:,2));
-grid on;
-title('Smoothed Velocity vs Time');
+plot(out.xy.Time, vxy(:,2)); % Smoothed velocity
+hold on; grid minor;
+plot(out.xy.Time, dy_dt);
+title('Velocity_y vs Time');
 xlabel('Time (s)');
 ylabel('v_y');
+legend('Smoothed', 'Raw Data');
 
 % Compare apex positions to XY vector
 figure;
 subplot(2, 1, 1);
-grid on; grid minor;
-hold on;
+grid minor; hold on;
 plot(out.xy.Time, smoothedXYvec(:,1));
-plot(apexTimes, apexPos(:,1), 'o', 'MarkerSize', 5, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r');
+plot(apexTimes, apexPos(:,1), 'o', 'MarkerSize', 3, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r');
 title('X Position vs Time');
 xlabel('Time (s)');
 ylabel('X Position (m)');
 legend('X Position', 'Apex X Points');
 
 subplot(2, 1, 2);
-hold on;
-grid on; grid minor;
+grid minor; hold on;
 plot(out.xy.Time, smoothedXYvec(:,2));
-plot(apexTimes, apexPos(:,2), 'o', 'MarkerSize', 5, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r');
+plot(apexTimes, apexPos(:,2), 'o', 'MarkerSize', 3, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r');
 title('Y Position vs Time');
 xlabel('Time (s)');
 ylabel('Y Position (m)');
