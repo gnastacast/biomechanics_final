@@ -8,63 +8,6 @@ if ~exist("skeleton", "var")
 end
 
 %%
-function [G, xyz] = graphSkeleton(skeleton, trial_no, frame)
-    G = graph;
-    matMap = containers.Map;
-    [G, xyz] = graphJoints(G, [], skeleton, skeleton, matMap, trial_no, frame);
-    % Convert to meters
-    xyz = xyz .* 0.0254 / skeleton.Length;
-    return
-end
-
-function [G,xyz] = graphJoints(G, xyz, joint, skeleton, matMap, trial_no, frame)
-    name = joint.Name;
-    mat = eye(4);
-    if skeleton == joint
-        name = "root";
-        parent_mat = eye(4);
-    else
-        parent_mat = matMap(joint.Parent);
-        joint_vec = joint.Direction * joint.Length;
-    end
-    
-    data = skeleton.MotionData(trial_no).Data(name);
-    if name == "root"
-        rot_vec = data(frame,4:6);
-        rot_mat = eul2rotm(-rot_vec / 180 * pi, "XYZ")';
-        mat(1:3,1:3) = rot_mat;
-        mat(1:3, 4) = data(frame,1:3)';
-
-    else
-        rot_vec = zeros(1,3);
-        if joint.DoF ~= ""
-            axisMap = containers.Map(["rx", "ry", "rz"], [1, 2, 3]);
-            for i = 1:numel(joint.DoF) 
-                rot_vec(axisMap(joint.DoF(i))) = data(frame, i);
-            end
-        end
-        rot_mat = eul2rotm(-rot_vec / 180 * pi, "XYZ")';
-        C = eul2rotm(-joint.Axis / 180 * pi, "XYZ")';
-        mat(1:3,1:3) = C * rot_mat / C;
-        mat(1:3, 4) = mat(1:3,1:3) * joint_vec';
-        mat = parent_mat * mat;
-    end
-    
-    matMap(name) =  mat;
-    xyz = [xyz; mat(1:3,4)'];
-    
-
-    if isempty(joint.Children)
-        return
-    end
-
-    for child = joint.Children
-        G = addedge(G, name, child);
-        [G, xyz] = graphJoints(G, xyz, skeleton.Joints(child), skeleton, matMap, trial_no, frame);
-    end
-end
-
-%% Calculate center of gravity
 
 % From S. Plagenhoef 'Anatomical Data for Analyzing Human Motion' 1983
 
@@ -98,31 +41,10 @@ COMf = cell2table({
 	'AbdomenAndPelvis', false, 28.2 - 0.22, {'lhipjoint', 0.195; 'rhipjoint', 0.195; 'upperback', 0.61};
 }, 'VariableNames', tableCols);
 
-function xyzCOG = getCOG(xyz, COMtable, jointNames)
-    xyzCOG = zeros(1,3);
-    for i = 1:height(COMtable)
-        prefixes = "";
-        if COMtable{i, 2}
-            prefixes = ["r", "l"];
-        end
-        for prefix = prefixes
-            total = zeros(1,3);
-            for joint = COMtable{i, 4}{1}'
-                jointName = prefix + joint{1};
-                jointIDX = jointNames == jointName;
-                assert(sum(jointIDX) == 1)
-                total = total + xyz(jointIDX,:) .* joint{2};
-                disp(jointName + " " + joint{2})
-            end
-            xyzCOG = xyzCOG + total .* (COMtable{i, 3} / 100);
-        end
-    end
-end
-
 
 %% Plot trial
 
-trial_no = 2;
+trial_no = 4;
 figure(1);
 [G, xyz] = graphSkeleton(skeleton, trial_no, 1);
 jointNames = table2array(convertvars(G.Nodes, 'Name', 'string'));
