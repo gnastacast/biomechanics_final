@@ -18,8 +18,12 @@ function [G,xyz] = graphJoints(G, xyz, joint, skeleton, matMap, trial_no, frame)
         parent_mat = matMap(joint.Parent);
         joint_vec = joint.Direction * joint.Length;
     end
-    
-    data = skeleton.MotionData(trial_no).Data(name);
+    if trial_no ~= -1
+        data = skeleton.MotionData(trial_no).Data(name);
+    else
+        frame = 1;
+        data = zeros(1,6);
+    end
     if name == "root"
         rot_vec = data(frame,4:6);
         rot_mat = eul2rotm(-rot_vec / 180 * pi, "XYZ")';

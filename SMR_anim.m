@@ -19,12 +19,12 @@ function SMR_anim(block)
 %
 
 % define persistent variables    
-persistent hFig Spring Piston
+persistent hFig Spring Piston Skeleton
 
 MakeAnimationFlag = 0;         
 
 % horizontal view window
-ViewRange = 6;   % [m]  
+ViewRange = 5;   % [m]  
 ReRange   = 0.0; % relative to viewrange      
 
 setup(block);
@@ -37,7 +37,7 @@ function setup(block)
 
   % --- Register Ports -------------------------------------------------------------- 
 
-  block.NumInputPorts  = 5;
+  block.NumInputPorts  = 6;
   block.NumOutputPorts = 0;
 
   block.SetPreCompInpPortInfoToDynamic;
@@ -71,6 +71,12 @@ function setup(block)
   block.InputPort(5).DatatypeID  = 0;  
   block.InputPort(5).Complexity  = 'Real';
   block.InputPort(5).DirectFeedthrough = true;
+
+  % set properties of input 4: time
+  block.InputPort(6).Dimensions  = 1;
+  block.InputPort(6).DatatypeID  = 0;  
+  block.InputPort(6).Complexity  = 'Real';
+  block.InputPort(6).DirectFeedthrough = true;
   
   
   % --- Register Parameters ---------------------------------------------------------
@@ -127,6 +133,12 @@ function Start(block)
   Piston = [PistonX; PistonY]';
 
   % initialize plot handles (note zero multiplication to avoid graphic output)
+    
+  Skeleton = MoCapTools.Skeleton("49.asf");
+  [G, xyz] = graphSkeleton(Skeleton, -1, 1);
+  jointNames = table2array(convertvars(G.Nodes, 'Name', 'string'));
+
+  plot(G, XData=xyz(:,3) + 10, YData=xyz(:,2), NodeLabel=repmat("", numel(G.Nodes), 1));
   plot(Piston(:,1) + 1, Piston(:,2)+1, 'Color', 'k', 'LineWidth', 3);
   plot(0, 1, 'o', 'MarkerSize', 15, 'MarkerEdgeColor', 'k', 'LineWidth', 8);
   plot(Spring(:,1), Spring(:,2), 'Color', [0.7 0 0],  'LineWidth', 3);
@@ -160,6 +172,8 @@ function Update(block)
   % if COM leaves view range, adjust axes
   hAx = gca;
   if hAx.XLim(2) < (CM(1) + ViewRange * ReRange)
+    set(gca, 'XLim', [CM(1) - ViewRange*ReRange, CM(1) + ViewRange * (1 - ReRange)])
+  elseif hAx.XLim(1) > (CM(1) + ViewRange * ReRange)
     set(gca, 'XLim', [CM(1) - ViewRange*ReRange, CM(1) + ViewRange * (1 - ReRange)])
   end
   

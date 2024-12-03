@@ -62,8 +62,12 @@ xlim([-2,2])
 ylim([-.1,2])
 % for i = 950:5:1900%skeleton.MotionData(trial_no).Frames
 i = 1;
+tic
+t = [1:skeleton.MotionData(trial_no).Frames]' / 120;
+tic
 while true
 % for i = 1:5:skeleton.MotionData(trial_no).Frames
+    i = find (t > mod(toc, t(end)), 1);
     [G, xyz] = graphSkeleton(skeleton, trial_no, i);
     xyzCOG = getCOG(xyz, COMf, jointNames);
     p_COG_front.XData = [xyzCOG(1), xyzCOG(1)];
@@ -77,7 +81,7 @@ while true
     title(i);
     refreshdata
     drawnow
-    i = mod(i + 5, skeleton.MotionData(trial_no).Frames) + 1;
+    % i = mod(i + 5, skeleton.MotionData(trial_no).Frames) + 1;
 end
 
 hold off;
