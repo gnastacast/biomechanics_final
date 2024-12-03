@@ -1,5 +1,7 @@
  addpath MoCapTools/src/
 
+run("model5_params.m")
+
 %%
 if ~exist("skeleton", "var")
     skeleton = MoCapTools.Skeleton("49.asf");
