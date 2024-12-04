@@ -1,5 +1,5 @@
 function [vels, liftoff, landing, fp] = analyze_data(t, xy, xyFP, ....
-    n_feet, min_vel, min_pos, smoothing_time, max_distance, debug_plot)
+    n_feet, min_vel, min_pos, smoothing_time, debug_plot)
 %UNTITLED4 Summary of this function goes here
 %   Detailed explanation goes here
     if debug_plot
@@ -13,16 +13,11 @@ function [vels, liftoff, landing, fp] = analyze_data(t, xy, xyFP, ....
     for leg=1:n_feet
         leg_cols = size(xyFP,2) / n_feet;
         xyFP_leg = xyFP(:, (leg-1) * leg_cols + 1 : leg * leg_cols);
-        next_fp_guess = find_foot_placements(xyFP_leg, t, min_vel, min_pos, smoothing_time, debug_plot);
-        [next_mask, next_times] = find_contact(xyFP_leg, next_fp_guess, t, max_distance, debug_plot);
+        [next_fp_guess, next_times, next_mask] = find_foot_placements( ...
+            xyFP_leg, t, min_vel, min_pos, smoothing_time, debug_plot);
         mask = or(mask, next_mask);
-        if size(next_times, 1) ~= size(next_fp_guess, 1)
-            assert(size(next_times, 1) == size(next_fp_guess, 1));
-        end
         times = [times; next_times];
         fp_guess = [fp_guess; next_fp_guess];
-        disp(next_times);
-        disp(next_fp_guess);
     end
 
     [times, order] = sort(times, 1);
@@ -30,8 +25,10 @@ function [vels, liftoff, landing, fp] = analyze_data(t, xy, xyFP, ....
     
     if debug_plot
         scatter(t(not(mask)), xy(not(mask),2))
-        scatter(times, ones(size(times)))
-        scatter(times, fp_guess(:,2))
+        if ~isempty(fp_guess)
+            scatter(times, ones(size(times)))
+            scatter(times, fp_guess(:,2))
+        end
     end
 
     vels = [];
@@ -77,50 +74,51 @@ function [vels, liftoff, landing, fp] = analyze_data(t, xy, xyFP, ....
     % figure()
     % scatter(foot_placement(:,1) + landings(:,1), foot_placement(:,2) + landings(:,2))
     if debug_plot
+        legend();
         hold off
         axis equal
     end
 
 end
 
-function fp_guess = find_foot_placements(xy_foot, t, min_vel, min_pos, smoothing_time, debug_plot)
+function [fp_guess, times, mask] = find_foot_placements(xy_foot, t, min_vel, min_pos, smoothing_time, debug_plot)
     dt = gradient(t);
     ttable = timetable(seconds(t), xy_foot);
     smoothedFoot = smoothdata(ttable, 'gaussian', seconds(smoothing_time)).xy_foot;
-    dx_fp = gradient(smoothedFoot(:,1)) ./ dt;
-    dy_fp = gradient(smoothedFoot(:,2)) ./ dt;
-
-    vel = sqrt(dy_fp(:,1).^2 + dx_fp.^2);
+    d_fp = zeros(size(xy_foot));
+    for i = 1:size(smoothedFoot, 2)
+        d_fp(:,i) = gradient(smoothedFoot(:,i)) ./ dt;
+    end
+    vel = vecnorm(d_fp,2,2);
     if debug_plot
-        plot(t(vel<10), vel(vel<10) / median(vel(vel<100)) / 2)
+        plot(t, smoothedFoot(:,2), "DisplayName", "Smoothed foot position")
+        plot(t, vel,  "DisplayName", "Smoothed foot velocity")
     end
     
-    fp_guess = [];
-    accumulator = [];
-    n_frames =  size(t,1);
-    for i = 1:1:n_frames+1
-        if i <= n_frames && vel(i) < min_vel && any(xy_foot(i,:) < min_pos)
-           accumulator = [accumulator; xy_foot(i,:)];
-        elseif ~isempty(accumulator)
-            next = mean(accumulator,1);
-            if isempty(fp_guess) || norm(fp_guess(end,:) - next) > min_vel
-                if size(accumulator, 1) > 2
-                    fp_guess = [fp_guess; next];
-                end
+    mask = and(vel < min_vel, max(smoothedFoot - min_pos,[],2) < 0);
+    step_count = 0;
+    max_gap = 5;
+    miss_counter = inf;
+    mask = int32(mask);
+    for i = 1:size(t, 1)
+        if mask(i)
+            if miss_counter > max_gap
+                step_count = step_count + 1;
+                miss_counter = 0;
+                disp(step_count)
             end
-            accumulator = [];
+            mask(i) = step_count;
+        else
+            miss_counter = miss_counter+1;
         end
     end
-end
 
-function [mask, times] = find_contact(xy_foot, fp_guess, t, max_distance, debug_plot)
-    mask = zeros(size(t));
-    n_times = size(fp_guess,1);
-    times = zeros(n_times, 1);
-    for i = 1:n_times
-        pt = fp_guess(i,:);
-        next_mask = vecnorm(xy_foot - pt, 2, 2) < max_distance;
-        times(i) = mean(t(next_mask));
-        mask = or(mask, next_mask);
+    fp_guess = zeros([step_count, size(xy_foot,2)]);
+    times = zeros([step_count, 1]);
+    for step = 1:step_count
+        fp_guess(step,:) = mean(xy_foot(mask == step,:), 1);
+        times(step) = mean(t(mask == step));
     end
+    fp_guess(:,2) = 0;
+    mask = mask > 0;
 end

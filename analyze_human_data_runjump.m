@@ -46,35 +46,60 @@ COMf = cell2table({
 [G, xyz] = graphSkeleton(skeleton, trial_no, 1);
 jointNames = table2array(convertvars(G.Nodes, 'Name', 'string'));
 n_frames = skeleton.MotionData(trial_no).Frames;
-
+min_frame = 10;
+max_frame = inf;
+% min_frame = 1100;
+% max_frame = 1900;
+% max_frame = 1400;
+n_frames = min(n_frames, max_frame) - min_frame + 1;
+t = [1:n_frames]' * 1/120;
 xyz_lfoot = zeros(n_frames, 3);
 xyz_rfoot = zeros(n_frames, 3);
 xyz_COG = zeros(n_frames, 3);
-t = [1:n_frames]' * 1/120;
 
 drawing_data = zeros(n_frames, 31 * 3 + 1);
 
 for i = 1:skeleton.MotionData(trial_no).Frames
+    if i < min_frame || i > max_frame
+        continue
+    end
+    idx = i - min_frame + 1;
     [G, xyz] = graphSkeleton(skeleton, trial_no, i);
-    jointIDX = jointNames == 'ltoes';
+    jointIDX = jointNames == 'lfoot';
     xyz = xyz(:, [3 2 1]);
-    xyz_lfoot(i, :) = xyz(jointIDX, :);
-    jointIDX = jointNames == 'rtoes';
-    xyz_rfoot(i, :) = xyz(jointIDX, :);
-    xyz_COG(i, :) = getCOG(xyz, COMf, jointNames);
-    drawing_data(i, :) = [t(i), reshape(xyz, 1, [])];
+    xyz_lfoot(idx, :) = xyz(jointIDX, :);
+    jointIDX = jointNames == 'rfoot';
+    xyz_rfoot(idx, :) = xyz(jointIDX, :);
+    xyz_COG(idx, :) = getCOG(xyz, COMf, jointNames);
+    drawing_data(idx, :) = [t(idx), reshape(xyz, 1, [])];
 end
 
 
 %%
+
+t = [1:n_frames]' * 1/120;
+figure(1000);
+clf(1000);
 n_legs = 2;
 xyzFP = [xyz_lfoot, xyz_rfoot];
-t = [1:n_frames]' * 1/120;
 
-[vels, liftoff, landing, fp] = analyze_data(t, xyz_COG, xyzFP, n_legs, 0.8, [-inf, -inf, 0.1], 0.2, 0.0145, true);
+[vels, liftoff, landing, fp] = analyze_data(t, xyz_COG, xyzFP, n_legs, 0.4, ...
+                                    [inf, inf, 0.05], 0.2, true);
+% axis equal
+legend([""])
+
+ylim([0,2]);
+% [vels, liftoff, landing, fp] = analyze_data(t, xyz_COG, xyzFP, n_legs, .2, ...
+%                                     [inf, inf, 0.1], 0.1, true);
+
+starting_step = 1;
+vels = vels(starting_step:end,:);
+liftoff = liftoff(starting_step:end,:);
+landing  = landing(starting_step:end,:);
+fp = fp(starting_step:end,:);
 
 leg_lengths = vecnorm(fp,2,2)
-
+%%
 
 load('polys.mat')
 
@@ -83,7 +108,7 @@ m = 80; % [kg]
 g = 9.8; % [m/s^2]
 p0 = 0.4; % [m]
 l0 = 1 - p0; % [m]
-k = 13000; % [N/m]
+k = 15000; % [N/m]
 
 a0 = 87.9294 * pi/180;  % [rad] : angle of attack during flight
 
@@ -97,21 +122,30 @@ model_version = 1;
 noise_seed = 0;
 noise_gain = 0;
 
+
+
 out2 = sim('model5_controlled');
 
 figure()
 hold on
 plot(xyz_COG(:,1), xyz_COG(:,2), "LineWidth",2)
 blanks = [];
-for i = 1:2:size(xyz_COG,1)
-     plot([xyz_COG(i, 1), xyz_lfoot(i, 1)], ...
-          [xyz_COG(i, 2), xyz_lfoot(i,2)], 'Color',[1,.7,.7])
-     blanks = [blanks, ""];
-end
-for i = 1:2:size(xyz_COG,1)
-     plot([xyz_COG(i, 1), xyz_rfoot(i, 1)], ...
-          [xyz_COG(i, 2), xyz_rfoot(i,2)], 'Color',[.7,.7,1])
-     blanks = [blanks, ""];
+% for i = 1:2:size(xyz_COG,1)
+%      plot([xyz_COG(i, 1), xyz_lfoot(i, 1)], ...
+%           [xyz_COG(i, 2), xyz_lfoot(i,2)], 'Color',[1,.7,.7])
+%      blanks = [blanks, ""];
+% end
+% for i = 1:2:size(xyz_COG,1)
+%      plot([xyz_COG(i, 1), xyz_rfoot(i, 1)], ...
+%           [xyz_COG(i, 2), xyz_rfoot(i,2)], 'Color',[.7,.7,1])
+%      blanks = [blanks, ""];
+% end
+for i = 1:5:skeleton.MotionData(trial_no).Frames
+    [G, xyz] = graphSkeleton(skeleton, trial_no, i);
+    plot(G, XData=xyz(:,3), YData=xyz(:,2), ...
+         NodeLabel=repmat("", numel(G.Nodes), 1), ...
+         Marker="none", EdgeColor=[.7,.7,.7]);
+    blanks = [blanks, ""];
 end
 plot(out2.xy.Data(:,1), out2.xy.Data(:,2), "LineWidth",2)
 scatter(landing(:,1), landing(:,2))
