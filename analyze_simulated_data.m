@@ -4,9 +4,7 @@ load('polys.mat')
 out = sim('model5_2f.slx');
 
 %%
-
-
-
+figure()
 xyFP_vec = out.xyFP.Data;
 t = out.xy.Time;
 xy_vec = out.xy.Data;
@@ -18,11 +16,13 @@ xyFP_vec = xyFP_vec + noise;
 n_legs = 1;
 
 [vels, liftoff, landing, fp] = analyze_data(t, xy_vec, xyFP_vec, n_legs, ...
-     0.02, [-inf,0.05], 0.01, 0.01, true);
+     0.02, [inf,0.05], 0.01, true);
 hold on
-plot(t, out.in_stance.Data)
+plot(t, out.in_stance.Data, "DisplayName", "In stance")
+ylim([0,1.5])
+xlim([0,2])
 leg_lengths = vecnorm(fp,2,2)
-
+%%
 
 load('polys.mat')
 run("model5_params.m")
