@@ -1,4 +1,5 @@
 % model parameters
+yGND = 0;
 m = 80; % [kg]
 g = 9.81; % [m/s^2]
 p0 = 0.4; % [m]

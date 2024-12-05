@@ -1,7 +1,12 @@
 addpath MoCapTools/src/
 run("model5_params.m")
 load('polys.mat')
+% noise_seed = 205;
+% noise_gain = .25;
+pK = 3;
 out = sim('model5_2f.slx');
+
+
 
 %%
 figure()

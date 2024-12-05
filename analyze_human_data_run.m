@@ -1,7 +1,7 @@
  addpath MoCapTools/src/
 
 %%
-if ~exist("skeleton", "var")
+if ~exist("skeleton", "var") || skeleton.Subject ~= 78
     skeleton = MoCapTools.Skeleton("78.asf");
     skeleton.AddMotion("78_12.amc");
 end
@@ -79,24 +79,25 @@ clf(1000);
 n_legs = 2;
 xyzFP = [xyz_lfoot, xyz_rfoot];
 
-[vels, liftoff, landing, fp] = analyze_data(t, xyz_COG, xyzFP, n_legs, 2, ...
-                                    [inf, 0.2, inf], 0.2, true);
+[vels, liftoff, landing, fp, times] = analyze_data(t, xyz_COG, xyzFP, n_legs, 2, ...
+                                                   [inf, 0.2, inf], 0.2, true);
 % axis equal
 % legend([""])
 
-ylim([0,2]);
+ylim([0,1.5]);
 % [vels, liftoff, landing, fp] = analyze_data(t, xyz_COG, xyzFP, n_legs, .2, ...
 %                                     [inf, inf, 0.1], 0.1, true);
 
-starting_step = 1;
-vels = vels(starting_step:end,:);
-liftoff = liftoff(starting_step:end,:);
-landing  = landing(starting_step:end,:);
-fp = fp(starting_step:end,:);
+% starting_step = 1;
+% vels = vels(starting_step:end,:);
+% liftoff = liftoff(starting_step:end,:);
+% landing  = landing(starting_step:end,:);
+% fp = fp(starting_step:end,:);
 hold on
 plot([0,1], [0.2,0.2])
 leg_lengths = vecnorm(fp,2,2)
 %%
+yGND = mean(landing(:,2) + fp(:,2));
 
 load('polys.mat')
 
@@ -105,7 +106,7 @@ m = 80; % [kg]
 g = 9.8; % [m/s^2]
 p0 = 0.4; % [m]
 l0 = 1 - p0; % [m]
-k = 19000; % [N/m]
+k = 17000; % [N/m]
 
 a0 = 87.9294 * pi/180;  % [rad] : angle of attack during flight
 
@@ -134,7 +135,7 @@ blanks = [];
 %           [xyz_COG(i, 2), xyz_rfoot(i,2)], 'Color',[.7,.7,1])
 %      blanks = [blanks, ""];
 % end
-for i = 1:5:skeleton.MotionData(trial_no).Frames
+for i = 1:2:skeleton.MotionData(trial_no).Frames
     [G, xyz] = graphSkeleton(skeleton, trial_no, i);
     plot(G, XData=xyz(:,1), YData=xyz(:,2), ...
          NodeLabel=repmat("", numel(G.Nodes), 1), ...
@@ -155,4 +156,4 @@ axis equal
 ylim([0,3])
 xlim([-3,3])
 title("Results using foot placement controller")
-legend(["Original CoM",blanks, "Replica CoM"])
+legend([blanks, "Original CoM", "Replica CoM"])

@@ -1,7 +1,7 @@
  addpath MoCapTools/src/
 
 %%
-if ~exist("skeleton", "var")
+if ~exist("skeleton", "var") || skeleton.Subject ~= 49
     skeleton = MoCapTools.Skeleton("49.asf");
     skeleton.AddMotion("49_04.amc");
     skeleton.AddMotion("49_02.amc");
@@ -65,10 +65,10 @@ for i = 1:skeleton.MotionData(trial_no).Frames
     end
     idx = i - min_frame + 1;
     [G, xyz] = graphSkeleton(skeleton, trial_no, i);
-    jointIDX = jointNames == 'lfoot';
+    jointIDX = jointNames == 'ltoes';
     xyz = xyz(:, [3 2 1]);
     xyz_lfoot(idx, :) = xyz(jointIDX, :);
-    jointIDX = jointNames == 'rfoot';
+    jointIDX = jointNames == 'rtoes';
     xyz_rfoot(idx, :) = xyz(jointIDX, :);
     xyz_COG(idx, :) = getCOG(xyz, COMf, jointNames);
     drawing_data(idx, :) = [t(idx), reshape(xyz, 1, [])];
@@ -83,10 +83,13 @@ clf(1000);
 n_legs = 2;
 xyzFP = [xyz_lfoot, xyz_rfoot];
 
-[vels, liftoff, landing, fp] = analyze_data(t, xyz_COG, xyzFP, n_legs, 0.4, ...
-                                    [inf, inf, 0.05], 0.2, true);
+[vels, liftoff, landing, fp, times] = analyze_data(t, xyz_COG, xyzFP, n_legs, 0.4, ...
+                                                   [inf, inf, 0.05], 0.2, true);
 % axis equal
-legend([""])
+legend(["CoM (m)", ...
+        "Left foot position (m)", "Left foot velocity (m/s)", ...
+        "Right foot position (m)", "Right foot velocity (m/s)", ...
+        "Flight phase", "Foot placement", "Quadratic fit"])
 
 ylim([0,2]);
 % [vels, liftoff, landing, fp] = analyze_data(t, xyz_COG, xyzFP, n_legs, .2, ...
@@ -101,6 +104,9 @@ fp = fp(starting_step:end,:);
 leg_lengths = vecnorm(fp,2,2)
 %%
 
+yGND = mean(landing(:,2) + fp(:,2));
+
+
 load('polys.mat')
 
 % model parameters
@@ -108,7 +114,7 @@ m = 80; % [kg]
 g = 9.8; % [m/s^2]
 p0 = 0.4; % [m]
 l0 = 1 - p0; % [m]
-k = 15000; % [N/m]
+k = 24000; % [N/m]
 
 a0 = 87.9294 * pi/180;  % [rad] : angle of attack during flight
 
@@ -117,6 +123,8 @@ x0 = liftoff(1,1);
 y0 = liftoff(1,2);
 dx0= vels(1,1);
 dy0= vels(1,2);
+
+start_time = times(1);
 
 model_version = 1;
 noise_seed = 0;

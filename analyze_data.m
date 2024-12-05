@@ -1,9 +1,9 @@
-function [vels, liftoff, landing, fp] = analyze_data(t, xy, xyFP, ....
+function [vels, liftoff, landing, fp, times] = analyze_data(t, xy, xyFP, ....
     n_feet, min_vel, min_pos, smoothing_time, debug_plot)
 %UNTITLED4 Summary of this function goes here
 %   Detailed explanation goes here
     if debug_plot
-        plot(t, xy(:,2));
+        plot(t, xy(:,2), Color='#77ac30', LineWidth=3);
         hold on
     end
     
@@ -26,8 +26,8 @@ function [vels, liftoff, landing, fp] = analyze_data(t, xy, xyFP, ....
     if debug_plot
         scatter(t(not(mask)), xy(not(mask),2))
         if ~isempty(fp_guess)
-            scatter(times, ones(size(times)))
-            scatter(times, fp_guess(:,2))
+            % scatter(times, ones(size(times)))
+            scatter(times, fp_guess(:,2),'red','filled','o','LineWidth',3)
         end
     end
 
@@ -57,7 +57,7 @@ function [vels, liftoff, landing, fp] = analyze_data(t, xy, xyFP, ....
         py = polyfit(sub_time, xy(sub_mask, 2), 2);
         px = polyfit(sub_time, xy(sub_mask, 1), 1);
         if(debug_plot)
-            plot(sub_time, polyval(py, sub_time));
+            plot(sub_time, polyval(py, sub_time), 'k', LineWidth=2);
         end
         
         yvel =  2 * sub_time(1) * py(1) + py(2);
@@ -119,6 +119,6 @@ function [fp_guess, times, mask] = find_foot_placements(xy_foot, t, min_vel, min
         fp_guess(step,:) = mean(xy_foot(mask == step,:), 1);
         times(step) = mean(t(mask == step));
     end
-    fp_guess(:,2) = 0;
+    % fp_guess(:,2) = 0;
     mask = mask > 0;
 end

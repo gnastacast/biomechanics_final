@@ -19,13 +19,14 @@ function SMR_anim(block)
 %
 
 % define persistent variables    
-persistent hFig Spring Piston Skeleton
+persistent hFig Spring Piston Count
 
 MakeAnimationFlag = 0;         
 
 % horizontal view window
-ViewRange = 5;   % [m]  
-ReRange   = 0.0; % relative to viewrange      
+ViewRange = 6;   % [m]  
+ReRange   = 0.0; % relative to viewrange    
+Count = 0;
 
 setup(block);
 
@@ -66,13 +67,13 @@ function setup(block)
   block.InputPort(4).DatatypeID  = 8;  % boolean
   block.InputPort(4).DirectFeedthrough = true;
 
-  % set properties of input 4: linear DOF position
+  % set properties of input 5: linear DOF position
   block.InputPort(5).Dimensions  = 1;
   block.InputPort(5).DatatypeID  = 0;  
   block.InputPort(5).Complexity  = 'Real';
   block.InputPort(5).DirectFeedthrough = true;
 
-  % set properties of input 4: time
+  % set properties of input 6: time
   block.InputPort(6).Dimensions  = 1;
   block.InputPort(6).DatatypeID  = 0;  
   block.InputPort(6).Complexity  = 'Real';
@@ -119,7 +120,7 @@ function Start(block)
   axis equal
   hold on
 
-  axis([0 - ViewRange * ReRange, 0 + ViewRange * (1-ReRange), -0.1, 1.5]);
+  axis([-.5 - ViewRange * ReRange, -.5 + ViewRange * (1-ReRange), -0.1, 2]);
 
   
   % --- Create Animation Objects ----------------------------------------------------
@@ -133,12 +134,11 @@ function Start(block)
   Piston = [PistonX; PistonY]';
 
   % initialize plot handles (note zero multiplication to avoid graphic output)
-    
-  Skeleton = MoCapTools.Skeleton("49.asf");
-  [G, xyz] = graphSkeleton(Skeleton, -1, 1);
-  jointNames = table2array(convertvars(G.Nodes, 'Name', 'string'));
+  if evalin('base', 'exist("skeleton")')
+    [G, xyz] = graphSkeleton(evalin('base', 'skeleton'), -1, 1);
+    plot(G, XData=xyz(:,3) + 10, YData=xyz(:,2), NodeLabel=repmat("", numel(G.Nodes), 1));
+  end
 
-  plot(G, XData=xyz(:,3) + 10, YData=xyz(:,2), NodeLabel=repmat("", numel(G.Nodes), 1));
   plot(Piston(:,1) + 1, Piston(:,2)+1, 'Color', 'k', 'LineWidth', 3);
   plot(0, 1, 'o', 'MarkerSize', 15, 'MarkerEdgeColor', 'k', 'LineWidth', 8);
   plot(Spring(:,1), Spring(:,2), 'Color', [0.7 0 0],  'LineWidth', 3);
@@ -215,6 +215,23 @@ function Update(block)
   PistonY(1) = CM(2);
   set(hPiston, 'XData', PistonX, 'YData', PistonY, 'LineStyle', Style);
 
+  if evalin('base', 'exist("drawing_data")')
+      start_time = evalin('base','times(1)');
+      times = evalin('base','drawing_data(:,1)') - start_time;
+      idx = find(block.InputPort(6).Data >= times, 1,"last");
+      if isempty(idx)
+          idx = 1;
+      end
+      data = evalin('base',"drawing_data(" + idx + ",2:end)");
+      data = reshape(data, [31,3]);
+      hAx.Children(5).YData = data(:,2);
+      hAx.Children(5).XData = data(:,1);
+  end
+  
+  if (Count + 1/30) <= block.InputPort(6).Data
+      Count = (Count + 1/24);
+      exportgraphics(gcf, "simulation.gif", "Append",true);
+  end
   % force plot
   drawnow expose
 

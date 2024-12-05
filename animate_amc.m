@@ -3,11 +3,19 @@
 run("model5_params.m")
 
 %%
-if ~exist("skeleton", "var")
+if ~exist("skeleton", "var") || skeleton.Subject ~= 49
     skeleton = MoCapTools.Skeleton("49.asf");
     skeleton.AddMotion("49_04.amc");
     skeleton.AddMotion("49_02.amc");
 end
+trial_no = 4;
+
+% if ~exist("skeleton", "var") || skeleton.Subject ~= 78
+%     skeleton = MoCapTools.Skeleton("78.asf");
+%     skeleton.AddMotion("78_12.amc");
+% end
+% trial_no = 12;
+
 
 %%
 
@@ -45,8 +53,6 @@ COMf = cell2table({
 
 
 %% Plot trial
-
-trial_no = 4;
 figure(1);
 [G, xyz] = graphSkeleton(skeleton, trial_no, 1);
 jointNames = table2array(convertvars(G.Nodes, 'Name', 'string'));
@@ -60,16 +66,17 @@ p_COG_side = plot([xyzCOG(1), xyzCOG(1)], [0, xyzCOG(3)], 'ok-', 'MarkerSize', 1
 p_front = plot(G, XData=xyz(:,1), YData=xyz(:,2), NodeLabel=repmat("", numel(G.Nodes), 1));
 p_side = plot(G, XData=xyz(:,3) + 10, YData=xyz(:,2), NodeLabel=repmat("", numel(G.Nodes), 1));
 axis equal
-xlim([-2,2])
+xlim([-2,3])
 ylim([-.1,2])
 % for i = 950:5:1900%skeleton.MotionData(trial_no).Frames
 i = 1;
 tic
 t = [1:skeleton.MotionData(trial_no).Frames]' / 120;
 tic
-while true
-% for i = 1:5:skeleton.MotionData(trial_no).Frames
-    i = find (t > mod(toc, t(end)), 1);
+gifFile = "Figures/" + skeleton.Subject + "_" + trial_no + ".gif";
+% while true
+for i = 1:5:skeleton.MotionData(trial_no).Frames
+    % i = find (t > mod(toc, t(end)), 1);
     [G, xyz] = graphSkeleton(skeleton, trial_no, i);
     xyzCOG = getCOG(xyz, COMf, jointNames);
     p_COG_front.XData = [xyzCOG(1), xyzCOG(1)];
@@ -81,9 +88,10 @@ while true
     p_side.XData = xyz(:,3) + .5;
     p_side.YData = xyz(:,2);
     title(i);
-    refreshdata
-    drawnow
-    % i = mod(i + 5, skeleton.MotionData(trial_no).Frames) + 1;
+    % refreshdata
+    % drawnow
+    exportgraphics(gcf, gifFile, "Append",true);
+    i = mod(i + 4, skeleton.MotionData(trial_no).Frames) + 1;
 end
 
 hold off;

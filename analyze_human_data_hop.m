@@ -1,7 +1,7 @@
  addpath MoCapTools/src/
 
 %%
-if ~exist("skeleton", "var")
+if ~exist("skeleton", "var") || skeleton.Subject ~= 49
     skeleton = MoCapTools.Skeleton("49.asf");
     skeleton.AddMotion("49_04.amc");
     skeleton.AddMotion("49_02.amc");
@@ -48,7 +48,7 @@ jointNames = table2array(convertvars(G.Nodes, 'Name', 'string'));
 n_frames = skeleton.MotionData(trial_no).Frames;
 min_frame = 1;
 max_frame = inf;
-min_frame = 1100;
+min_frame = 1000;
 max_frame = 1400;
 n_frames = min(n_frames, max_frame) - min_frame + 1;
 t = [1:n_frames]' * 1/120;
@@ -65,7 +65,7 @@ for i = 1:skeleton.MotionData(trial_no).Frames
     idx = i - min_frame + 1;
     [G, xyz] = graphSkeleton(skeleton, trial_no, i);
     jointIDX = jointNames == 'lfoot';
-    xyz = xyz(:, [3 2 1]);
+    xyz = xyz(:, [1 2 3]);
     xyz_lfoot(idx, :) = xyz(jointIDX, :);
     jointIDX = jointNames == 'rfoot';
     xyz_rfoot(idx, :) = xyz(jointIDX, :);
@@ -82,8 +82,8 @@ clf(1000);
 n_legs = 1;
 xyzFP = [xyz_lfoot];
 
-[vels, liftoff, landing, fp] = analyze_data(t, xyz_COG, xyzFP, n_legs, 0.2, ...
-                                    [inf, 0.05, inf], 0.2, true);
+[vels, liftoff, landing, fp, times] = analyze_data(t, xyz_COG, xyzFP, n_legs, 0.2, ...
+                                                   [inf, 0.05, inf], 0.2, true);
 % axis equal
 % legend([""])
 
@@ -100,6 +100,7 @@ hold on
 plot([0,2.5], [0.2,0.2])
 leg_lengths = vecnorm(fp,2,2)
 %%
+yGND = mean(landing(:,2) + fp(:,2));
 
 load('polys.mat')
 
