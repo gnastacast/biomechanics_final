@@ -155,4 +155,6 @@ axis equal
 ylim([0,3])
 xlim([-3,3])
 title("Results using foot placement controller")
+xlabel('X Position (m)')
+ylabel('Y Position (m)')
 legend(["Original CoM",blanks, "Replica CoM"])
