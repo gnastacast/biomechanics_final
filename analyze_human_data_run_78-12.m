@@ -2,8 +2,8 @@
 
 %%
 if ~exist("skeleton", "var") || skeleton.Subject ~= 78
-    skeleton = MoCapTools.Skeleton("78.asf");
-    skeleton.AddMotion("78_12.amc");
+    skeleton = MoCapTools.Skeleton("MoCapData/78.asf");
+    skeleton.AddMotion("MoCapData/78_12.amc");
 end
 trial_no = 12;
 

@@ -5,8 +5,8 @@ run("model5_params.m")
 %%
 if ~exist("skeleton", "var") || skeleton.Subject ~= 49
     skeleton = MoCapTools.Skeleton("49.asf");
-    skeleton.AddMotion("49_04.amc");
-    skeleton.AddMotion("49_02.amc");
+    skeleton.AddMotion("MoCapData/49_04.amc");
+    skeleton.AddMotion("MoCapData/49_02.amc");
 end
 trial_no = 4;
 
